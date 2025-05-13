@@ -129,7 +129,7 @@ pair<int, int> MetaBlocks::getNumOptimalSolutions() {
             }
             if (checkValid()) {
                 newState = getState();
-                if (stateStrings.find(newState) == stateStrings.end() || stateStrings[newState] > t + 1) {
+                if (stateStrings.find(newState) == stateStrings.end() || stateStrings[newState] >= t + 1) {
                     stateStrings[newState] = t + 1;
                     auto newMoveSet = moveSet;
                     newMoveSet.push_back(i);
@@ -140,9 +140,10 @@ pair<int, int> MetaBlocks::getNumOptimalSolutions() {
         }
     }
     resetPuzzle();
+    vector<string> moveMap = {"right", "left", "up", "down"};
     for (vector<int> mvs : bestMoveSets) {
         for (int mv : mvs) {
-            cout << mv << " ";
+            cout << moveMap[mv] << " ";
         }
         cout << "\n";
     }

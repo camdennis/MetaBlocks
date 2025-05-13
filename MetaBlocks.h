@@ -60,7 +60,6 @@ public:
     void resetPuzzle();
 
     void backtrack(unordered_map<string, int>& stateStrings, vector<int>& sol, int t);
-    vector<int> getSolutionSizes();
     void move(int moveId, bool undo = false);
     void activateButton(bool deactivate = false);
     void transport();

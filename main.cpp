@@ -7,8 +7,6 @@ int main() {
     puzzle.loadGrid(fileName);
     pair<int, int> sol = puzzle.getNumOptimalSolutions();
     cout << sol.first << " " << sol.second << endl;
-//    vector<int> solutions = puzzle.getSolutionSizes();
-//    cout << solutions.size() << endl;
     puzzle.view();
     return 0;
 }
