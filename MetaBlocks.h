@@ -13,6 +13,7 @@
 #include <GL/glu.h>
 #include <sstream>
 #include <cmath>
+#include <unordered_set>
 
 using namespace std;
 
@@ -46,7 +47,7 @@ public:
     // We want buttons
     vector<bool> buttons;
     // Which elements are affected by the buttons?
-    vector<vector<pair<int, int>>> buttonMap;
+    vector<vector<tuple<int, int, bool>>> buttonMap;
     float lineWidth = 4.0f;
 
     MetaBlocks(int in, int im, int ib); // Declaration only
@@ -56,6 +57,15 @@ public:
     void loadState(string stateString);
     bool checkWin();
     bool checkValid();
+    void resetPuzzle();
+
+    void backtrack(unordered_map<string, int>& stateStrings, vector<int>& sol, int t);
+    vector<int> getSolutionSizes();
+    void move(int moveId, bool undo = false);
+    void activateButton(bool deactivate = false);
+    void transport();
+    pair<int, int> getNumOptimalSolutions();
+
     string eventTypeToString(sf::Event::EventType type);
     void loadGrid(const string& filename);
     void saveGrid(const string& filename);

@@ -87,75 +87,95 @@ bool MetaBlocks::checkWin() {
     return false;
 }
 
-bool MetaBlocks::checkValid() {
-    auto [x, y] = currPos;
+bool checkOOB(const pair<int, int>& currPos, int n, int m) {
+    const auto& [x, y] = currPos;
     // Check if the current position is out of bounds
     if (x < 0 || x >= n || y < 0 || y >= m) {
         return false;
     }
-    bool firstHalf, secondHalf;
-    switch (state)
-    {
-    case 0:
-        if (grid[x][y] == 4 || grid[x][y] == 0 || (grid[x][y] < 0 && !buttons[-grid[x][y]])) {
+    return true;    
+}
+
+bool checkValid0(const pair<int, int>& currPos, const vector<vector<int>>& grid, const vector<bool>& buttons) {
+    const auto& [x, y] = currPos;
+    if (grid[x][y] == 4 || grid[x][y] == 0) {
+        return false;
+    }
+    if (grid[x][y] < 0) {
+        // Here's where it's actually interesting.
+        if (grid[x][y] < -200 && buttons[-grid[x][y] % 200]) {
             return false;
         }
-        break;
-    case 1:
-        firstHalf = false;
-        secondHalf = false;
-        for (int i = 0; i < b; i++) {
-            if (grid[x + i][y] == 4) {
-                return false;
-            }
-            if (grid[x + i][y] == 1 || grid[x + i][y] == 2 || grid[x + i][y] == 3 || grid[x + i][y] / 100 == 1 || grid[x + i][y] / 100 == 2 || (grid[x + i][y] < 0 && buttons[-grid[x + i][y]])) {
-                if (i < b / 2) {
-                    firstHalf = true;
-                }
-                else {
-                    secondHalf = true;
-                }
-                if (b % 2 && i == b / 2) {
-                    firstHalf = true;
-                    secondHalf = true;
-                    break;
-                }
-            }
-        }
-        if (! firstHalf || ! secondHalf) {
+        if (grid[x][y] > -200 && !buttons[-grid[x][y]]) {
             return false;
         }
-        break;
-    case 2:
-        firstHalf = false;
-        secondHalf = false;
-        for (int i = 0; i < b; i++) {
-            if (grid[x][y + i] == 4) {
-                return false;
-            }
-            if (grid[x][y + i] == 1 || grid[x][y + i] == 2 || grid[x][y + i] == 3 || grid[x][y + i] / 100 == 1 || grid[x][y + i] / 100 == 2 || (grid[x][y + i] < 0 && buttons[-grid[x][y + i]])) {
-                if (i < b / 2) {
-                    firstHalf = true;
-                }
-                else {
-                    secondHalf = true;
-                }
-                if (b % 2 && i == b / 2) {
-                    firstHalf = true;
-                    secondHalf = true;
-                    break;
-                }
-            }
-        }
-        if (! firstHalf || ! secondHalf) {
-            return false;
-        }
-        break;
-    break;        
-    default:
-        break;
     }
     return true;
+}
+
+bool checkValid12(const pair<int, int>& currPos, const vector<vector<int>>& grid, const vector<bool>& buttons, int b, bool isOne) {
+    const auto& [x, y] = currPos;
+    bool firstHalf = false;
+    bool secondHalf = false;
+    for (int i = 0; i < b; i++) {
+        if (firstHalf && secondHalf) {
+            break;
+        }
+        int val = grid[x + i * isOne][y + i * (! isOne)];
+        if (val == 4) {
+            return false;
+        }
+        if (val == 1 || val == 2 || val == 3 || val > 99) {
+            if (i < b / 2) {
+                firstHalf = true;
+            }
+            else {
+                secondHalf = true;
+            }
+            if (b % 2 && i == b / 2) {
+                firstHalf = true;
+                secondHalf = true;
+                break;
+            }
+        }
+        else if ((val < -200 && !buttons[-val % 200]) || (val > -200 && buttons[-val])) {
+            if (i < b / 2) {
+                firstHalf = true;
+            }
+            else {
+                secondHalf = true;
+            }
+            if (b % 2 && i == b / 2) {
+                firstHalf = true;
+                secondHalf = true;
+                break;
+            }
+        }
+    }
+    if (! firstHalf || ! secondHalf) {
+        return false;
+    }
+    return true;
+}
+
+bool MetaBlocks::checkValid() {
+    if (! checkOOB(currPos, n, m)) {
+        return false;
+    }
+    switch (state) {
+        case 0:
+            return checkValid0(currPos, grid, buttons);
+            break;
+        case 1:
+            return checkValid12(currPos, grid, buttons, b, true);
+            break;
+        case 2:
+            return checkValid12(currPos, grid, buttons, b, false);
+            break;
+        default:
+            break;
+    }
+    return false;
 }
 
 void MetaBlocks::loadGrid(const string& filename) {
@@ -220,7 +240,7 @@ void MetaBlocks::loadGrid(const string& filename) {
     int numTransporters = 0;
     vector<pair<int, int>> transporterIndices;
     int numButtons = 0;
-    vector<tuple<int, int, int>> bridgeIndices;
+    vector<tuple<int, int, int, bool>> bridgeIndices;
     for (int i = 0; i < n; i++) {
         for (int j = 0; j < m; j++) {
             if (grid[i][j] / 100 == 1) {
@@ -231,14 +251,14 @@ void MetaBlocks::loadGrid(const string& filename) {
                 numButtons++;
             }
             else if (grid[i][j] < 0) {
-                bridgeIndices.push_back({-grid[i][j], i, j});
+                bridgeIndices.push_back({(-grid[i][j]) % 200, i, j, (grid[i][j] < -200)});
             }
         }
     }
     buttons.resize(numButtons + 1, false);
     buttonMap.resize(numButtons + 1);
-    for (auto [k, i, j] : bridgeIndices) {
-        buttonMap[k].push_back({i, j});
+    for (auto [k, i, j, t] : bridgeIndices) {
+        buttonMap[k].push_back({i, j, t});
     }
     transporters.resize(numTransporters);
     int val;
@@ -270,4 +290,10 @@ void MetaBlocks::saveGrid(const string& filename) {
 
     file.close();
     cout << "Grid saved successfully to " << filename << endl;
+}
+
+void MetaBlocks::resetPuzzle() {
+    state = 0;
+    currPos = start;
+    fill(buttons.begin(), buttons.end(), false);
 }
