@@ -79,14 +79,16 @@ void MetaBlocks::loadState(string stateString) {
     }
 }
 
-bool MetaBlocks::checkWin(int x, int y) {
+bool MetaBlocks::checkWin() {
+    auto [x, y] = currPos;
     if (state == 0 && x == end.first && y == end.second) {
         return true;
     }
     return false;
 }
 
-bool MetaBlocks::checkValid(int x, int y) {
+bool MetaBlocks::checkValid() {
+    auto [x, y] = currPos;
     // Check if the current position is out of bounds
     if (x < 0 || x >= n || y < 0 || y >= m) {
         return false;

@@ -54,8 +54,8 @@ public:
     void initialize();
     string getState();
     void loadState(string stateString);
-    bool checkWin(int x, int y);
-    bool checkValid(int x, int y);
+    bool checkWin();
+    bool checkValid();
     string eventTypeToString(sf::Event::EventType type);
     void loadGrid(const string& filename);
     void saveGrid(const string& filename);

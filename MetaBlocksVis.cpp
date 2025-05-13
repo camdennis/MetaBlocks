@@ -357,11 +357,12 @@ int MetaBlocks::view() {
                     default:
                         break;
                 }
-                if (! checkValid(currPos.first, currPos.second)) {
+                if (! checkValid()) {
                     currPos = start;
                     state = 0;
+                    fill(buttons.begin(), buttons.end(), 0);
                 }
-                if (checkWin(currPos.first, currPos.second)) {
+                if (checkWin()) {
                     cout << "Winner!" << endl;
                 }
                 int val = grid[currPos.first][currPos.second];
