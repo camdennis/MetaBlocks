@@ -49,6 +49,8 @@ public:
     // Which elements are affected by the buttons?
     vector<vector<tuple<int, int, bool>>> buttonMap;
     float lineWidth = 4.0f;
+    set<pair<int, int>> zeroIndices;
+    set<pair<int, int>> oneIndices;
 
     MetaBlocks(int in, int im, int ib); // Declaration only
 
@@ -64,6 +66,13 @@ public:
     void activateButton(bool deactivate = false);
     void transport();
     pair<int, int> getNumOptimalSolutions();
+    pair<int, int> showOptimalSolutions();
+    pair<int, int> basicMCMove();
+    void undoBasicMCMove(pair<int, int>& coord);
+    void updateIndices();
+    double getEnergy();
+    double MCStep(double energy, double temperature);
+    void MCSimulation(int numSteps, double energyThreshold, double temperature);
 
     string eventTypeToString(sf::Event::EventType type);
     void loadGrid(const string& filename);

@@ -14,6 +14,7 @@
 #include <unordered_set>
 #include <queue>
 #include <climits>
+#include <random>
 
 using namespace std;
 
@@ -95,7 +96,7 @@ void MetaBlocks::transport() {
     }
 }
 
-pair<int, int> MetaBlocks::getNumOptimalSolutions() {
+pair<int, int> MetaBlocks::showOptimalSolutions() {
     resetPuzzle();
     // This is going to be Dijkstra's Algorithm
     unordered_map<string, int> stateStrings;
@@ -151,3 +152,137 @@ pair<int, int> MetaBlocks::getNumOptimalSolutions() {
     return {bestTime, sol};
 }
 
+pair<int, int> MetaBlocks::getNumOptimalSolutions() {
+    resetPuzzle();
+    // This is going to be Dijkstra's Algorithm
+    unordered_map<string, int> stateStrings;
+    stateStrings[getState()] = 0;
+    priority_queue<pair<int, string>, vector<pair<int, string>>, greater<pair<int, string>>> pq;
+    pq.push({0, getState()});
+    int bestTime = INT_MAX;
+    int sol = 0;
+    string newState;
+    while (! pq.empty() && pq.top().first <= bestTime) {
+        auto [t, stateString] = pq.top();
+        pq.pop();
+        loadState(stateString);
+        for (int i = 0; i < 4; i++) {
+            move(i);
+            activateButton();
+            transport();
+            if (checkWin()) {
+                if (t + 1 < bestTime) {
+                    bestTime = t + 1;
+                    sol = 1;
+                }
+                else if (t + 1 == bestTime) {
+                    sol++;
+                }
+            }
+            if (checkValid()) {
+                newState = getState();
+                if (stateStrings.find(newState) == stateStrings.end() || stateStrings[newState] >= t + 1) {
+                    stateStrings[newState] = t + 1;
+                    pq.push({t + 1, newState});
+                }
+            }
+            loadState(stateString);
+        }
+    }
+    resetPuzzle();
+    if (bestTime == INT_MAX) {
+        return {-1, -1};
+    }
+    return {bestTime, sol};
+}
+
+void MetaBlocks::updateIndices() {
+    zeroIndices.clear();
+    oneIndices.clear();
+    for (int i = b; i < grid.size() - b; i++) {
+        for (int j = b; j < grid[0].size() - b; j++) {
+            if (grid[i][j] == 0) {
+                zeroIndices.insert({i, j});
+            }
+            else if (grid[i][j] == 1) {
+                oneIndices.insert({i, j});
+            }
+        }
+    }
+}
+
+pair<int, int> MetaBlocks::basicMCMove() {
+    // Make a move--choose either to add or subtract a singular block from the grid:
+    random_device rd;
+    mt19937 gen(rd());
+    int totalIndices = oneIndices.size() + zeroIndices.size();
+    uniform_int_distribution<> flip(0, totalIndices - 1);
+    cout << "0" << endl;
+    int index = flip(gen);
+    cout << "0" << endl;
+    pair<int, int> coord;
+    cout << "0" << endl;
+    if (index < oneIndices.size()) {
+        auto it = oneIndices.begin();
+        advance(it, index);
+        coord = *it;
+        oneIndices.erase(coord);
+        zeroIndices.insert(coord);
+    }
+    else {
+        auto it = zeroIndices.begin();
+        advance(it, index - oneIndices.size());
+        coord = *it;
+        zeroIndices.erase(coord);
+        oneIndices.insert(coord);
+    }
+    grid[coord.first][coord.second] = 1 - grid[coord.first][coord.second];
+    return coord;
+}
+
+void MetaBlocks::undoBasicMCMove(pair<int, int>& coord) {
+    if (grid[coord.first][coord.second]) {
+        zeroIndices.insert(coord);
+        oneIndices.erase(coord);
+    }
+    else {
+        zeroIndices.erase(coord);
+        oneIndices.insert(coord);
+    }
+    grid[coord.first][coord.second] = 1 - grid[coord.first][coord.second];
+}
+
+double MetaBlocks::getEnergy() {
+    auto [bestTime, numSolutions] = getNumOptimalSolutions();
+    cout << "bestTime=" << bestTime << endl;
+    return -(double) bestTime;
+}
+
+double MetaBlocks::MCStep(double energy, double temperature) {
+    pair<int, int> coord = basicMCMove();
+    double deltaE = getEnergy() - energy;
+    if (deltaE < 0) {
+        return energy + deltaE;
+    }
+
+    double prob = exp(-deltaE / temperature);
+    cout << "prob=" << prob << endl;
+    random_device rd;
+    mt19937 gen(rd());
+    uniform_real_distribution<> dis(0.0, 1.0);
+    if (dis(gen) > prob) {
+        undoBasicMCMove(coord);
+        return energy;
+    }
+    return energy + deltaE;
+}
+
+void MetaBlocks::MCSimulation(int numSteps, double energyThreshold, double temperature) {
+    updateIndices();
+    int i = 0;
+    double energy = getEnergy();
+    while (i < numSteps && energy > energyThreshold) {
+        energy = MCStep(energy, temperature);
+        i++;
+    }
+}
