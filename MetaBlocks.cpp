@@ -11,13 +11,15 @@
 #include <GL/glu.h>
 #include <sstream>
 #include <cmath>
+#include <map>
+#include <random>
 
 using namespace std;
 
-MetaBlocks::MetaBlocks(int in, int im, int ib) : n(in), m(im), b(ib) {}
+MetaBlocks::MetaBlocks(int in, int im, int ib, int ielementIntensity) : n(in), m(im), b(ib), elementIntensity(ielementIntensity), gen(random_device{}()) {}
 
 void MetaBlocks::initialize() {
-    grid.resize(n, vector<int>(m, 0));
+    grid.resize(n, vector<int>(m, 1));
     // There are always only 3 states
     states.resize(3, vector<vector<vector<bool>>>(b, vector<vector<bool>>(b, vector<bool>(b, false))));
     // Initialize the states
@@ -28,23 +30,138 @@ void MetaBlocks::initialize() {
     }
     // There should be 12 transitions we can make (4 buttons for each of the 3 states)
     // Put these in order from ->, <-, ^, v
-    mp[0] = {{1, 0}, {1, 1}, {2, 2}, {2, 3}};
-    mp[1] = {{0, 4}, {0, 5}, {1, 6}, {1, 7}};
+    mp[0] = {{1, 0}, {1, 1}, {2, 2 }, {2, 3 }};
+    mp[1] = {{0, 4}, {0, 5}, {1, 6 }, {1, 7 }};
     mp[2] = {{2, 8}, {2, 9}, {0, 10}, {0, 11}};
     // Initialize the offsets
     offset.resize(12);
-    offset[0] = {1, 0};
-    offset[1] = {-b, 0};
-    offset[2] = {0, 1};
-    offset[3] = {0, -b};
-    offset[4] = {b, 0};
-    offset[5] = {-1, 0};
-    offset[6] = {0, 1};
-    offset[7] = {0, -1};
-    offset[8] = {1, 0};
-    offset[9] = {-1, 0};
-    offset[10] = {0, b};
-    offset[11] = {0, -1};
+    offset[0]  =  {1 , 0 };
+    offset[1]  =  {-b, 0 };
+    offset[2]  =  {0 , 1 };
+    offset[3]  =  {0 , -b};
+    offset[4]  =  {b , 0 };
+    offset[5]  =  {-1, 0 };
+    offset[6]  =  {0 , 1 };
+    offset[7]  =  {0 , -1};
+    offset[8]  =  {1 , 0 };
+    offset[9]  =  {-1, 0 };
+    offset[10] =  {0 , b };
+    offset[11] =  {0 , -1};
+
+    // How many buttons do we need?
+    applyIntensity();
+
+}
+
+float vecSum(vector<float>& vec) {
+    return accumulate(vec.begin(), vec.end(), 0.0f);
+}
+
+void MetaBlocks::applyIntensity() {
+    int numButtons = 0, deadSpots = 0, transporterPairs = 0;
+    vector<int> numButtonsOn, numButtonsOff;
+    map<int, vector<vector<int>>> options = {{1, {{1}, {2}, {3}, {4}}},
+        {2, {{2}, {1, 3}, {3, 4}}},
+        {3, {{1, 3, 4}, {1, 3}, {1, 4}, {2}}},
+        {4, {{2, 3, 4}, {1, 3, 4}, {2, 3}, {2, 4}}},
+        {5, {{2, 3, 4}}}
+    };
+    vector<vector<int>> optionList = options[elementIntensity];
+    uniform_int_distribution<int> dist(0, optionList.size() - 1);
+    vector<int> puzzleType = optionList[dist(gen)];
+    for (int p : puzzleType) {
+        cout << p << " ";
+    }
+    cout << endl;
+    vector<int> numButtonsVec = {1, 1, 1, 2, 3};
+    vector<int> numButtonsOnVec = {1, 2, 2, 5, 7};
+    vector<int> numButtonsOffVec = {1, 1, 2, 5, 7};
+    vector<int> numDeadCellsVec = {1, 2, 3, 4, 5};
+    vector<int> transporterPairsVec = {1, 1, 2, 3, 3};
+    int index = b + 2;
+    otherIndices.insert({b, b, 2});
+    start = {b, b};
+    currPos = start;
+    otherIndices.insert({b, 2 * b + 1, 3});
+    end = {b, 2 * b + 1};
+    vector<tuple<int, int, bool>> buttonMapEntry;
+    for (int key : puzzleType) {
+        switch (key) {
+            case 1:
+                numButtons = numButtonsVec[elementIntensity - 1];
+                buttons.resize(numButtons, false);
+                for (int button = 0; button < numButtons; button++) {
+                    otherIndices.insert({index / m + b, index % m + b, 201 + button});
+                    index++;
+                    for (int j = 0; j < numButtonsOnVec[elementIntensity - 1]; j++) {
+                        buttonMapEntry.push_back({index / m + b, index % m + b, false});
+                        otherIndices.insert({index / m + b, index % m + b, -1 - button});
+                        index++;
+                    }
+                    buttonMap.push_back(buttonMapEntry);
+                    buttonMapEntry.clear();
+                }
+                break;
+            case 2:
+                numButtons = numButtonsVec[elementIntensity - 1];
+                buttons.resize(numButtons, false);
+                for (int button = 0; button < numButtons; button++) {
+                    otherIndices.insert({index / m + b, index % m + b, 201 + button});
+                    index++;
+                    for (int j = 0; j < numButtonsOnVec[elementIntensity - 1]; j++) {
+                        buttonMapEntry.push_back({index / m + b, index % m + b, false});
+                        otherIndices.insert({index / m + b, index % m + b, -1 - button});
+                        index++;
+                    }
+                    for (int j = 0; j < numButtonsOffVec[elementIntensity - 1]; j++) {
+                        buttonMapEntry.push_back({index / m + b, index % m + b, true});
+                        otherIndices.insert({index / m + b, index % m + b, -201 - button});
+                        index++;
+                    }
+                    buttonMap.push_back(buttonMapEntry);
+                    buttonMapEntry.clear();
+                }
+                break;
+            case 3:
+                deadSpots = numDeadCellsVec[elementIntensity - 1];
+                for (int i = 0; i < deadSpots; i++) {
+                    otherIndices.insert({index / m + b, index % m + b, 4});
+                    index++;
+                }
+                break;
+            case 4:
+                transporterPairs = transporterPairsVec[elementIntensity - 1];
+                for (int i = 0; i < transporterPairs; i++) {
+                    otherIndices.insert({index / m + b, index % m + b, 100 + 2 * i});
+                    transporters.push_back({index / m + b, index % m + b});
+                    index++;
+                    otherIndices.insert({index / m + b, index % m + b, 100 + 2 * i + 1});
+                    transporters.push_back({index / m + b, index % m + b});
+                    index++;
+                }
+            default:
+                break;
+        }
+    }
+    initializeGridAndGridFurniture();
+}
+
+void MetaBlocks::initializeGridAndGridFurniture() {
+    n += 2 * b;
+    m += 2 * b;
+    vector<vector<int>> newGrid(n, vector<int>(m, 0));
+    for (int i = b; i < n - b; i++) {
+        for (int j = b; j < m - b; j++) {
+            newGrid[i][j] = 1;
+            oneIndices.insert({i, j});
+        }
+    }
+    grid = newGrid; // Assign the temporary grid to the class grid
+    // Now put the things in correctly:
+    for (auto [x, y, z] : otherIndices) {
+        grid[x][y] = z;
+        oneIndices.erase({x, y});
+    }
 }
 
 string MetaBlocks::getState() {

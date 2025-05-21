@@ -14,16 +14,19 @@
 #include <sstream>
 #include <cmath>
 #include <unordered_set>
+#include <random>
 
 using namespace std;
 
 class MetaBlocks
 {
 public:
+    mt19937 gen;
     const int CELL_SIZE = 300;
     int n = 9;
     int m = 9;
     int b = 2;
+    int elementIntensity = 2;
     pair<int, int> start;
     pair<int, int> currPos;
     pair<int, int> end;
@@ -49,12 +52,40 @@ public:
     // Which elements are affected by the buttons?
     vector<vector<tuple<int, int, bool>>> buttonMap;
     float lineWidth = 4.0f;
+    // options
+    // 0 -- empty
     set<pair<int, int>> zeroIndices;
+    // 1 -- filled
     set<pair<int, int>> oneIndices;
+    // 2 -- start
+    // 3 -- end
+    // 4 -- dead
+    // 10x -- teleporter(s)--in pairs
+    // 20x -- buttons 
+    // -x -- button activated block
+    // -20x -- button deactivated block
+    set<tuple<int, int, int>> otherIndices;
+    // We want to set some integers that tell us what TYPE of game it is:
+    // 1) numDead
+    // 2) numTeleporterPairs
+    // 3) numButtons
+    // 4) numButtonActivatedBlocks (for each button)
+    // 5) numButtonDeactivatedBlocks (for each button)
+    // On screen, select b, select grid size, select elementIntensity, select difficulty
+    // elementIntensity randomly generates some number of each element
+    // 1) User selects the grid size, b, and the element intensity and there's a shuffle option to shuffle the elements
+    // 2) A screen to the side shows the STARTING configuration for the game with all of the buttons and panels nicely lined up
+    // 3) Clicking start makes it generate the puzzle--then it shows it and you're playing
+    // 4) A help button shows what each of the elements mean (always available)
+    // 5) On the front should be a tutorial button that walks through a trivial game with each element and has helpful tips.
+    // 6) A move counter counts the number of moves you've made and compares it with the optimal number.
+    // 7) Infinite moves should be a 0 score and the perfect # of moves should be a 100 score. One formula is 100 * possible / used
 
-    MetaBlocks(int in, int im, int ib); // Declaration only
+    MetaBlocks(int in, int im, int ib, int ielementIntensity); // Declaration only
 
     void initialize();
+    void initializeGridAndGridFurniture();
+    void applyIntensity();
     string getState();
     void loadState(string stateString);
     bool checkWin();

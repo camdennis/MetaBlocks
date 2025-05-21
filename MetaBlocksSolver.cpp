@@ -142,6 +142,7 @@ pair<int, int> MetaBlocks::showOptimalSolutions() {
     }
     resetPuzzle();
     vector<string> moveMap = {"right", "left", "up", "down"};
+   cout << "Found " << bestMoveSets.size() << " optimal solutions in " << bestTime << " moves:" << endl;
     for (vector<int> mvs : bestMoveSets) {
         for (int mv : mvs) {
             cout << moveMap[mv] << " ";
