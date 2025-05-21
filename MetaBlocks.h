@@ -98,8 +98,10 @@ public:
     void transport();
     pair<int, int> getNumOptimalSolutions();
     pair<int, int> showOptimalSolutions();
-    pair<int, int> basicMCMove();
-    void undoBasicMCMove(pair<int, int>& coord);
+    vector<vector<int>> basicMCMove();
+    void undoBasicMCMove(vector<vector<int>>& swapPairs);
+    void swapBlocks(tuple<int, int, int>& p1, tuple<int, int, int>& p2, vector<vector<int>>& sol);
+    void resetBlocks(vector<int>& p);
     void updateIndices();
     double getEnergy();
     double MCStep(double energy, double temperature);

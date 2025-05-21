@@ -89,7 +89,7 @@ void MetaBlocks::applyIntensity() {
         switch (key) {
             case 1:
                 numButtons = numButtonsVec[elementIntensity - 1];
-                buttons.resize(numButtons, false);
+                buttons.resize(numButtons + 1, false);
                 for (int button = 0; button < numButtons; button++) {
                     otherIndices.insert({index / m + b, index % m + b, 201 + button});
                     index++;
@@ -104,7 +104,7 @@ void MetaBlocks::applyIntensity() {
                 break;
             case 2:
                 numButtons = numButtonsVec[elementIntensity - 1];
-                buttons.resize(numButtons, false);
+                buttons.resize(numButtons + 1, false);
                 for (int button = 0; button < numButtons; button++) {
                     otherIndices.insert({index / m + b, index % m + b, 201 + button});
                     index++;
@@ -133,10 +133,11 @@ void MetaBlocks::applyIntensity() {
                 transporterPairs = transporterPairsVec[elementIntensity - 1];
                 for (int i = 0; i < transporterPairs; i++) {
                     otherIndices.insert({index / m + b, index % m + b, 100 + 2 * i});
-                    transporters.push_back({index / m + b, index % m + b});
+                    pair<int, int> t1 = {index / m + b, index % m + b};
                     index++;
                     otherIndices.insert({index / m + b, index % m + b, 100 + 2 * i + 1});
                     transporters.push_back({index / m + b, index % m + b});
+                    transporters.push_back(t1);
                     index++;
                 }
             default:

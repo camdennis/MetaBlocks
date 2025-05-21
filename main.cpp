@@ -5,7 +5,7 @@ using namespace std;
 int main() {
     int level;
     cin >> level;
-    MetaBlocks puzzle(5, 15, 2, level);
+    MetaBlocks puzzle(15, 25, 3, level);
     puzzle.initialize();
 //    string fileName = "level3.csv";
 //    puzzle.loadGrid(fileName);
@@ -14,7 +14,7 @@ int main() {
 //    puzzle.showOptimalSolutions();
 //    cout << puzzle.grid.size() << " " << puzzle.grid[0].size() << endl;
 //    puzzle.view();
-    puzzle.MCSimulation(100000, -100, 0.001);
+    puzzle.MCSimulation(10000, -100, 0.001);
     puzzle.showOptimalSolutions();
     for (int i = 0; i < puzzle.n; i++) {
         for (int j = 0; j < puzzle.m; j++) {

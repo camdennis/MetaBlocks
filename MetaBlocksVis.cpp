@@ -269,7 +269,7 @@ void MetaBlocks::drawWinState(float x, float y, float z, float length, float wid
 void MetaBlocks::drawGrid(sf::RenderWindow& renderWindow) {
     for (int i = 0; i < n; i++) {
         for (int j = 0; j < m; j++) {
-            if (grid[i][j] == 1 || grid[i][j] == 2 || (grid[i][j] < 0 && buttons[-grid[i][j]])) {
+            if (grid[i][j] == 1 || grid[i][j] == 2 || (grid[i][j] < 0 && buttons[-grid[i][j]]) || (grid[i][j] < -200 && !buttons[(-grid[i][j]) % 200])) {
                 drawCube(i, j, 0, 1, 1, 0.2, {0.8f, 0.1f, 0.1f});
             }
             else if (grid[i][j] == 4) {
