@@ -5,10 +5,10 @@
 #include <unordered_map>
 #include <set>
 #include <fstream>
-#include <SFML/Window.hpp>
-#include <SFML/OpenGL.hpp>
-#include <SFML/Graphics.hpp>
-#include <GL/glu.h>
+//#include <SFML/Window.hpp>
+//#include <SFML/OpenGL.hpp>
+//#include <SFML/Graphics.hpp>
+//#include <GL/glu.h>
 #include <sstream>
 #include <cmath>
 #include <unordered_set>
@@ -19,6 +19,31 @@
 using namespace std;
 random_device rd;
 mt19937 gen(rd());
+
+string MetaBlocks::getFullGridString() {
+    string sol = "";
+    for (int i = 0; i < grid.size(); i++) {
+        for (int j = 0; j < grid[0].size(); j++) {
+            sol += to_string(grid[i][j]) + ',';
+        }
+    }
+    return sol;
+}
+
+void MetaBlocks::setFullGridString(string gridString) {
+    int index = 0;
+    for (int i = 0; i < grid.size(); i++) {
+        for (int j = 0; j < grid[0].size(); j++) {
+            string curr = "";
+            while (index < gridString.size() && gridString[index] != ',') {
+                curr += gridString[index];
+                index++;
+            }
+            index++;
+            grid[i][j] = stoi(curr);
+        }
+    }
+}
 
 void MetaBlocks::move(int moveId, bool undo) {
     if (undo) {
@@ -142,16 +167,11 @@ pair<int, int> MetaBlocks::showOptimalSolutions() {
             loadState(stateString);
         }
     }
-    resetPuzzle();
-    vector<string> moveMap = {"right", "left", "up", "down"};
-   cout << "Found " << bestMoveSets.size() << " optimal solutions in " << bestTime << " moves:" << endl;
-    for (vector<int> mvs : bestMoveSets) {
-        for (int mv : mvs) {
-            cout << moveMap[mv] << " ";
-        }
-        cout << "\n";
+    resetPuzzle();    
+    string moveMap = "rlud";
+    for (int mv : bestMoveSets[0]) {
+        optimalSolution += moveMap[mv];
     }
-    cout << endl;
     return {bestTime, sol};
 }
 
@@ -538,12 +558,20 @@ double MetaBlocks::MCStep(double energy, double temperature) {
     return energy + deltaE;
 }
 
-void MetaBlocks::MCSimulation(int numSteps, double energyThreshold, double temperature) {
+void MetaBlocks::MCSimulation(int numSteps, double temperature) {
     updateIndices();
     int i = 0;
     double energy = getEnergy();
-    while (i < numSteps && energy > energyThreshold) {
+    double prevEnergy = energy;
+    string sol;
+    while (i < numSteps && energy > -difficulty) {
         energy = MCStep(energy, temperature);
+        if (energy < prevEnergy) {
+            prevEnergy = energy;
+            sol = getFullGridString();
+        }
         i++;
     }
+    setFullGridString(sol);
+    resetPuzzle();
 }

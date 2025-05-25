@@ -3,26 +3,14 @@
 using namespace std;
 
 int main() {
-    int level;
-    cin >> level;
-    MetaBlocks puzzle(15, 25, 3, level);
-    puzzle.initialize();
-//    string fileName = "level3.csv";
-//    puzzle.loadGrid(fileName);
-//    pair<int, int> sol = puzzle.getNumOptimalSolutions();
-//    cout << sol.first << " " << sol.second << endl;
-//    puzzle.showOptimalSolutions();
-//    cout << puzzle.grid.size() << " " << puzzle.grid[0].size() << endl;
-//    puzzle.view();
-    puzzle.MCSimulation(10000, -100, 0.001);
+    string inputString;
+    cin >> inputString;
+    MetaBlocks puzzle;
+    puzzle.setInitializationString(inputString);
+    puzzle.MCSimulation(10000, 0.1);
     puzzle.showOptimalSolutions();
-    for (int i = 0; i < puzzle.n; i++) {
-        for (int j = 0; j < puzzle.m; j++) {
-            cout << puzzle.grid[i][j] << " ";
-        }
-        cout << "\n";
-    }
-    cout << endl;
-    puzzle.view();
+    string gridString = puzzle.getFullGridString();
+    cout << gridString << endl;
+    cout << puzzle.optimalSolution << endl;
     return 0;
 }

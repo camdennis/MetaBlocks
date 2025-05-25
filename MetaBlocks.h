@@ -7,9 +7,9 @@
 #include <unordered_map>
 #include <set>
 #include <fstream>
-#include <SFML/Window.hpp>
-#include <SFML/OpenGL.hpp>
-#include <SFML/Graphics.hpp>
+//#include <SFML/Window.hpp>
+//#include <SFML/OpenGL.hpp>
+//#include <SFML/Graphics.hpp>
 #include <GL/glu.h>
 #include <sstream>
 #include <cmath>
@@ -27,6 +27,7 @@ public:
     int m = 9;
     int b = 2;
     int elementIntensity = 2;
+    int difficulty = 5;
     pair<int, int> start;
     pair<int, int> currPos;
     pair<int, int> end;
@@ -52,6 +53,7 @@ public:
     // Which elements are affected by the buttons?
     vector<vector<tuple<int, int, bool>>> buttonMap;
     float lineWidth = 4.0f;
+    string optimalSolution;
     // options
     // 0 -- empty
     set<pair<int, int>> zeroIndices;
@@ -81,16 +83,20 @@ public:
     // 6) A move counter counts the number of moves you've made and compares it with the optimal number.
     // 7) Infinite moves should be a 0 score and the perfect # of moves should be a 100 score. One formula is 100 * possible / used
 
-    MetaBlocks(int in, int im, int ib, int ielementIntensity); // Declaration only
+    MetaBlocks(int in = 0, int im = 0, int ib = 0, int ielementIntensity = 0, int idifficulty = 0); // Declaration only
 
     void initialize();
     void initializeGridAndGridFurniture();
+    void setInitializationString(string init);
     void applyIntensity();
     string getState();
     void loadState(string stateString);
     bool checkWin();
     bool checkValid();
     void resetPuzzle();
+    string getFullGridString();
+    void setFullGridString(string gridString);
+
 
     void backtrack(unordered_map<string, int>& stateStrings, vector<int>& sol, int t);
     void move(int moveId, bool undo = false);
@@ -105,20 +111,20 @@ public:
     void updateIndices();
     double getEnergy();
     double MCStep(double energy, double temperature);
-    void MCSimulation(int numSteps, double energyThreshold, double temperature);
+    void MCSimulation(int numSteps, double temperature);
 
-    string eventTypeToString(sf::Event::EventType type);
+//    string eventTypeToString(sf::Event::EventType type);
     void loadGrid(const string& filename);
     void saveGrid(const string& filename);
-    void drawCube(float x, float y, float z, float length = 1.0f, float width = 1.0f, float height = 1.0f, tuple<float, float, float> color = {0.8f, 0.1f, 0.1f});
-    void drawCubeWithText(sf::RenderWindow& renderWindow, float x, float y, float z, const string& text, float length = 1.0f, float width = 1.0f, float height = 0.2f, tuple<float, float, float> color = {0.8f, 0.1f, 0.1f});
-    void drawCubeWithDisk(float x, float y, float z, float length = 1.0f, float width = 1.0f, float height = 0.2f, 
-                          tuple<float, float, float> cubeColor = {0.8f, 0.1f, 0.1f}, 
-                          tuple<float, float, float> diskColor = {0.1f, 0.8f, 0.1f});
-    void drawWinState(float x, float y, float z, float length = 1.0f, float width = 1.0f, float height = 0.2f, tuple<float, float, float> color = {0.1f, 0.8f, 0.1f});
-    void drawGrid(sf::RenderWindow& renderWindow);
-    void drawState(int x, int y, tuple<float, float, float> color = {0.1f, 0.1f, 0.8f});
-    int view();
+//    void drawCube(float x, float y, float z, float length = 1.0f, float width = 1.0f, float height = 1.0f, tuple<float, float, float> color = {0.8f, 0.1f, 0.1f});
+//    void drawCubeWithText(sf::RenderWindow& renderWindow, float x, float y, float z, const string& text, float length = 1.0f, float width = 1.0f, float height = 0.2f, tuple<float, float, float> color = {0.8f, 0.1f, 0.1f});
+//    void drawCubeWithDisk(float x, float y, float z, float length = 1.0f, float width = 1.0f, float height = 0.2f, 
+//                          tuple<float, float, float> cubeColor = {0.8f, 0.1f, 0.1f}, 
+//                          tuple<float, float, float> diskColor = {0.1f, 0.8f, 0.1f});
+//    void drawWinState(float x, float y, float z, float length = 1.0f, float width = 1.0f, float height = 0.2f, tuple<float, float, float> color = {0.1f, 0.8f, 0.1f});
+//    void drawGrid(sf::RenderWindow& renderWindow);
+//    void drawState(int x, int y, tuple<float, float, float> color = {0.1f, 0.1f, 0.8f});
+//    int view();
 };
 
 #endif

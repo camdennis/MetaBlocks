@@ -5,9 +5,9 @@
 #include <unordered_map>
 #include <set>
 #include <fstream>
-#include <SFML/Window.hpp>
-#include <SFML/OpenGL.hpp>
-#include <SFML/Graphics.hpp>
+//#include <SFML/Window.hpp>
+//#include <SFML/OpenGL.hpp>
+//#include <SFML/Graphics.hpp>
 #include <GL/glu.h>
 #include <sstream>
 #include <cmath>
@@ -16,7 +16,7 @@
 
 using namespace std;
 
-MetaBlocks::MetaBlocks(int in, int im, int ib, int ielementIntensity) : n(in), m(im), b(ib), elementIntensity(ielementIntensity), gen(random_device{}()) {}
+MetaBlocks::MetaBlocks(int in, int im, int ib, int ielementIntensity, int idifficulty) : n(in), m(im), b(ib), elementIntensity(ielementIntensity), difficulty(idifficulty), gen(random_device{}()) {}
 
 void MetaBlocks::initialize() {
     grid.resize(n, vector<int>(m, 1));
@@ -50,7 +50,6 @@ void MetaBlocks::initialize() {
 
     // How many buttons do we need?
     applyIntensity();
-
 }
 
 float vecSum(vector<float>& vec) {
@@ -240,6 +239,9 @@ bool checkValid12(const pair<int, int>& currPos, const vector<vector<int>>& grid
             break;
         }
         int val = grid[x + i * isOne][y + i * (! isOne)];
+        if (val == 0) {
+            continue;
+        }
         if (val == 4) {
             return false;
         }
@@ -414,4 +416,27 @@ void MetaBlocks::resetPuzzle() {
     state = 0;
     currPos = start;
     fill(buttons.begin(), buttons.end(), false);
+}
+
+void MetaBlocks::setInitializationString(string init) {
+    // The string is going to be n,m,b,ei,difficulty
+    // These are all ints which is nice
+    vector<int> input;
+    init += ',';
+    string temp = "";
+    for (char c : init) {
+        if (c == ',') {
+            input.push_back(stoi(temp));
+            temp = "";
+        }
+        else {
+            temp += c;
+        }
+    }
+    n = input[0];
+    m = input[1];
+    b = input[2];
+    elementIntensity = input[3];
+    difficulty = input[4];
+    initialize();
 }
