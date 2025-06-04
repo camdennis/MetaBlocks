@@ -235,9 +235,6 @@ bool checkValid12(const pair<int, int>& currPos, const vector<vector<int>>& grid
     bool firstHalf = false;
     bool secondHalf = false;
     for (int i = 0; i < b; i++) {
-        if (firstHalf && secondHalf) {
-            break;
-        }
         int val = grid[x + i * isOne][y + i * (! isOne)];
         if (val == 0) {
             continue;
@@ -255,7 +252,6 @@ bool checkValid12(const pair<int, int>& currPos, const vector<vector<int>>& grid
             if (b % 2 && i == b / 2) {
                 firstHalf = true;
                 secondHalf = true;
-                break;
             }
         }
         else if ((val < -200 && !buttons[-val % 200]) || (val > -200 && buttons[-val])) {
@@ -268,7 +264,6 @@ bool checkValid12(const pair<int, int>& currPos, const vector<vector<int>>& grid
             if (b % 2 && i == b / 2) {
                 firstHalf = true;
                 secondHalf = true;
-                break;
             }
         }
     }
