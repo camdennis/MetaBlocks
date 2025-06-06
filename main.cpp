@@ -7,10 +7,9 @@ int main() {
     cin >> inputString;
     MetaBlocks puzzle;
     puzzle.setInitializationString(inputString);
-    puzzle.MCSimulation(10000, 0.1);
+    puzzle.MCSimulation(10000, 1);
     puzzle.showOptimalSolutions();
-    string gridString = puzzle.getFullGridString();
+    string gridString = puzzle.getJSONString();
     cout << gridString << endl;
-    cout << puzzle.optimalSolution << endl;
     return 0;
 }

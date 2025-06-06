@@ -95,6 +95,7 @@ public:
     bool checkValid();
     void resetPuzzle();
     string getFullGridString();
+    string getJSONString();
     void setFullGridString(string gridString);
 
 

@@ -20,6 +20,25 @@ using namespace std;
 random_device rd;
 mt19937 gen(rd());
 
+string MetaBlocks::getJSONString() {
+    string sol = "{ \"layout\": [[";
+    for (int i = b; i < grid.size() - b; i++) {
+        for (int j = b; j < grid[0].size() - b - 1; j++) {
+            sol += to_string(grid[i][j]) + ',';
+        }
+        sol += to_string(grid[i][grid[0].size() - b - 1]) + ']';
+        if (i == grid.size() - b - 1) {
+            sol += "],\n";
+        }
+        else {
+            sol += ",\n[";
+        }
+    }
+    sol += "\"b\": " + to_string(b) + ",\n";
+    sol += "\"solutionString\": \"" + optimalSolution + "\"\n}";
+    return sol;
+}
+
 string MetaBlocks::getFullGridString() {
     string sol = "";
     for (int i = 0; i < grid.size(); i++) {
@@ -99,12 +118,7 @@ void MetaBlocks::activateButton(bool deactivate) {
     }
     int val = grid[currPos.first][currPos.second]; 
     if (val / 100 == 2) {
-        if (! deactivate) {
-            buttons[val % 100] = true;
-        }
-        else {
-            buttons[val % 100] = false;
-        }
+        buttons[val % 100] = !deactivate;
     }
 }
 
@@ -114,12 +128,7 @@ void MetaBlocks::transport() {
     }
     int val = grid[currPos.first][currPos.second];
     if (val / 100 == 1) {
-        if (val % 2) {
-            currPos = transporters[val % 100];
-        }
-        else {
-            currPos = transporters[val % 100];
-        }
+        currPos = transporters[val % 100];
     }
 }
 
@@ -183,7 +192,7 @@ pair<int, int> MetaBlocks::getNumOptimalSolutions() {
     priority_queue<pair<int, string>, vector<pair<int, string>>, greater<pair<int, string>>> pq;
     pq.push({0, getState()});
     int bestTime = INT_MAX;
-    int sol = 0;
+    int fakeSteps = 0;
     string newState;
     while (! pq.empty() && pq.top().first <= bestTime) {
         auto [t, stateString] = pq.top();
@@ -196,10 +205,6 @@ pair<int, int> MetaBlocks::getNumOptimalSolutions() {
             if (checkWin()) {
                 if (t + 1 < bestTime) {
                     bestTime = t + 1;
-                    sol = 1;
-                }
-                else if (t + 1 == bestTime) {
-                    sol++;
                 }
             }
             if (checkValid()) {
@@ -216,7 +221,7 @@ pair<int, int> MetaBlocks::getNumOptimalSolutions() {
     if (bestTime == INT_MAX) {
         return {-1, -1};
     }
-    return {bestTime, sol};
+    return {bestTime, pq.size()};
 }
 
 void MetaBlocks::updateIndices() {
@@ -538,8 +543,8 @@ void MetaBlocks::undoBasicMCMove(vector<vector<int>>& swapPairs) {
 }
 
 double MetaBlocks::getEnergy() {
-    auto [bestTime, numSolutions] = getNumOptimalSolutions();
-    return -(double) bestTime;
+    auto [bestTime, fakeSteps] = getNumOptimalSolutions();
+    return -(double) bestTime * sqrt((double) (fakeSteps + 1));
 }
 
 double MetaBlocks::MCStep(double energy, double temperature) {
