@@ -32,6 +32,7 @@ public:
     pair<int, int> currPos;
     pair<int, int> end;
     int state;
+    int accept = 0;
     vector<vector<int>> grid;
     // We want a map to tell us what states you can reach from a given state
     // We want the map to ALSO tell us the x/y offset state of the block
@@ -113,6 +114,9 @@ public:
     double getEnergy();
     double MCStep(double energy, double temperature);
     void MCSimulation(int numSteps, double temperature);
+
+    string EvolutionAlgorithm(string init, int numGenerations, int minPopulation, int maxPopulation);
+    void printGrid();
 
 //    string eventTypeToString(sf::Event::EventType type);
     void loadGrid(const string& filename);

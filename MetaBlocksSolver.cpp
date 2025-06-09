@@ -134,18 +134,18 @@ void MetaBlocks::transport() {
 
 pair<int, int> MetaBlocks::showOptimalSolutions() {
     resetPuzzle();
-    // This is going to be Dijkstra's Algorithm
+    // This is going to be a BFS Algorithm
     unordered_map<string, int> stateStrings;
     stateStrings[getState()] = 0;
-    priority_queue<tuple<int, string, vector<int>>, vector<tuple<int, string, vector<int>>>, greater<tuple<int, string, vector<int>>>> pq;
-    pq.push({0, getState(), {}});
+    queue<tuple<int, string, vector<int>>> q;
+    q.push({0, getState(), {}});
     int bestTime = INT_MAX;
     int sol = 0;
     string newState;
     vector<vector<int>> bestMoveSets;
-    while (! pq.empty() && get<0>(pq.top()) <= bestTime) {
-        auto [t, stateString, moveSet] = pq.top();
-        pq.pop();
+    while (! q.empty() && get<0>(q.front()) <= bestTime) {
+        auto [t, stateString, moveSet] = q.front();
+        q.pop();
         loadState(stateString);
         for (int i = 0; i < 4; i++) {
             move(i);
@@ -170,7 +170,7 @@ pair<int, int> MetaBlocks::showOptimalSolutions() {
                     stateStrings[newState] = t + 1;
                     auto newMoveSet = moveSet;
                     newMoveSet.push_back(i);
-                    pq.push({t + 1, newState, newMoveSet});
+                    q.push({t + 1, newState, newMoveSet});
                 }
             }
             loadState(stateString);
@@ -186,17 +186,16 @@ pair<int, int> MetaBlocks::showOptimalSolutions() {
 
 pair<int, int> MetaBlocks::getNumOptimalSolutions() {
     resetPuzzle();
-    // This is going to be Dijkstra's Algorithm
+    // This is going to be a BFS Algorithm
     unordered_map<string, int> stateStrings;
     stateStrings[getState()] = 0;
-    priority_queue<pair<int, string>, vector<pair<int, string>>, greater<pair<int, string>>> pq;
-    pq.push({0, getState()});
+    queue<pair<int, string>> q;
+    q.push({0, getState()});
     int bestTime = INT_MAX;
-    int fakeSteps = 0;
     string newState;
-    while (! pq.empty() && pq.top().first <= bestTime) {
-        auto [t, stateString] = pq.top();
-        pq.pop();
+    while (! q.empty() && q.front().first <= bestTime) {
+        auto [t, stateString] = q.front();
+        q.pop();
         loadState(stateString);
         for (int i = 0; i < 4; i++) {
             move(i);
@@ -211,7 +210,7 @@ pair<int, int> MetaBlocks::getNumOptimalSolutions() {
                 newState = getState();
                 if (stateStrings.find(newState) == stateStrings.end() || stateStrings[newState] >= t + 1) {
                     stateStrings[newState] = t + 1;
-                    pq.push({t + 1, newState});
+                    q.push({t + 1, newState});
                 }
             }
             loadState(stateString);
@@ -221,7 +220,7 @@ pair<int, int> MetaBlocks::getNumOptimalSolutions() {
     if (bestTime == INT_MAX) {
         return {-1, -1};
     }
-    return {bestTime, pq.size()};
+    return {bestTime, q.size()};
 }
 
 void MetaBlocks::updateIndices() {
@@ -560,6 +559,7 @@ double MetaBlocks::MCStep(double energy, double temperature) {
         undoBasicMCMove(coords);
         return energy;
     }
+    accept++;
     return energy + deltaE;
 }
 
@@ -577,6 +577,113 @@ void MetaBlocks::MCSimulation(int numSteps, double temperature) {
         }
         i++;
     }
+    cout << (double) accept / i << endl;
     setFullGridString(sol);
     resetPuzzle();
+}
+
+class gridQueue : public MetaBlocks {
+public:
+    vector<vector<vector<int>>> allGrids;
+    vector<set<pair<int, int>>> zeroIndicesSet;
+    vector<set<pair<int, int>>> oneIndicesSet;
+    vector<set<tuple<int, int, int>>> otherIndicesSet;
+    priority_queue<pair<double, int>> pq;
+    set<int> best;
+    int minPopulation;
+    int numChildren;
+    gridQueue(int _minPopulation, int _numChildren) : minPopulation(_minPopulation), numChildren(_numChildren) {}
+
+    void initialize(string init) {
+        setInitializationString(init);
+        updateIndices();
+        double energy = getEnergy();
+        for (int i = 0; i < minPopulation * (numChildren + 1); i++) {
+            allGrids.push_back(grid);
+            zeroIndicesSet.push_back(zeroIndices);
+            oneIndicesSet.push_back(oneIndices);
+            otherIndicesSet.push_back(otherIndices);
+        }
+        for (int i = 0; i < minPopulation; i++) {
+            best.insert(i);
+            pq.push({energy, i});
+        }
+    }
+
+    void cull() {
+        while (pq.size() > minPopulation) {
+            auto [en, ind] = pq.top();
+            pq.pop();
+            best.erase(ind);
+        }
+    }
+
+    void propagate() {
+        int i = 0;
+        for (int idx : best) {
+            int remainingChildren = numChildren;
+            grid = allGrids[idx];
+            zeroIndices = zeroIndicesSet[idx];
+            oneIndices = oneIndicesSet[idx];
+            otherIndices = otherIndicesSet[idx];
+            while (remainingChildren > 0) {
+                if (best.find(i) != best.end()) {
+                    i++;
+                    continue;
+                }
+                vector<vector<int>> coords = basicMCMove();
+                double energy = getEnergy();
+                allGrids[i] = grid;
+                zeroIndicesSet[i] = zeroIndices;
+                oneIndicesSet[i] = oneIndices;
+                otherIndicesSet[i] = otherIndices;
+                pq.push({energy, i});
+                undoBasicMCMove(coords);
+                i++;
+                remainingChildren--;
+            }
+        }
+        // Fill up best with everything:
+        for (int j = 0; j < minPopulation * (numChildren + 1); j++) {
+            best.insert(j);
+        }
+    }
+
+    void setBest() {
+        while (pq.size() > 1) {
+            pq.pop();
+        }
+        auto [energy, index] = pq.top();
+        grid = allGrids[index];
+        zeroIndices = zeroIndicesSet[index];
+        oneIndices = oneIndicesSet[index];
+        otherIndices = otherIndicesSet[index];
+        showOptimalSolutions();
+    }
+
+    string getSolutionJSON() {
+        return getJSONString();
+    }
+};
+
+// Write a genetic algorithm:
+string MetaBlocks::EvolutionAlgorithm(string init, int numGenerations, int minPopulation, int numChildren) {
+    gridQueue gq(minPopulation, numChildren);
+    gq.initialize(init);
+    for (int i = 0; i < numGenerations; i++) {
+        gq.propagate();
+        gq.cull();
+        cout << "generation " << i << endl;
+    }
+    gq.setBest();
+    return gq.getSolutionJSON();
+}
+
+void MetaBlocks::printGrid() {
+    for (int i = 0; i < grid.size(); i++) {
+        for (int j = 0; j < grid[0].size(); j++) {
+            cout << grid[i][j] << " ";
+        }
+        cout << "\n";
+    }
 }
