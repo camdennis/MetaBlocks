@@ -66,20 +66,8 @@ void MetaBlocks::setFullGridString(string gridString) {
 
 void MetaBlocks::move(int moveId, bool undo) {
     if (undo) {
-        switch (moveId) {
-            case 0:
-                moveId = 1;
-                break;
-            case 1:
-                moveId = 0;
-                break;
-            case 2:
-                moveId = 3;
-                break;
-            case 3:
-                moveId = 2;
-                break;
-        }
+        unordered_map<int, int> undoMap = {{0, 1}, {1, 0}, {2, 3}, {3, 2}};
+        moveId = undoMap[moveId];
     }
     pair<int, int> nextState;
     switch (moveId) {
@@ -130,6 +118,20 @@ void MetaBlocks::transport() {
     if (val / 100 == 1) {
         currPos = transporters[val % 100];
     }
+}
+
+bool MetaBlocks::checkValidSolution() {
+    resetPuzzle();
+    unordered_map<char, int> moveMap = {{'r', 0}, {'l', 1}, {'u', 2}, {'d', 3}};
+    for (int i = 0; i < optimalSolution.size(); i++) {
+        move(moveMap[optimalSolution[i]]);
+        activateButton();
+        transport();
+        if (! checkValid()) {
+            return false;
+        }
+    }
+    return checkWin();
 }
 
 pair<int, int> MetaBlocks::showOptimalSolutions() {
@@ -667,13 +669,13 @@ public:
 };
 
 // Write a genetic algorithm:
-string MetaBlocks::EvolutionAlgorithm(string init, int numGenerations, int minPopulation, int numChildren) {
+string MetaBlocks::EvolutionAlgorithm(string init, int minPopulation, int numChildren) {
     gridQueue gq(minPopulation, numChildren);
     gq.initialize(init);
-    for (int i = 0; i < numGenerations; i++) {
+    for (int i = 0; i < gq.difficulty; i++) {
         gq.propagate();
         gq.cull();
-        cout << "generation " << i << endl;
+//        cout << "generation " << i << endl;
     }
     gq.setBest();
     return gq.getSolutionJSON();

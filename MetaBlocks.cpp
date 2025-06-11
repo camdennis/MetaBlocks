@@ -18,9 +18,7 @@ using namespace std;
 
 MetaBlocks::MetaBlocks(int in, int im, int ib, int ielementIntensity, int idifficulty) : n(in), m(im), b(ib), elementIntensity(ielementIntensity), difficulty(idifficulty), gen(random_device{}()) {}
 
-void MetaBlocks::initialize() {
-    grid.resize(n, vector<int>(m, 1));
-    // There are always only 3 states
+void MetaBlocks::initializeMaps() {
     states.resize(3, vector<vector<vector<bool>>>(b, vector<vector<bool>>(b, vector<bool>(b, false))));
     // Initialize the states
     for (int i = 0; i < b; i++) {
@@ -47,8 +45,11 @@ void MetaBlocks::initialize() {
     offset[9]  =  {-1, 0 };
     offset[10] =  {0 , b };
     offset[11] =  {0 , -1};
+}
 
-    // How many buttons do we need?
+void MetaBlocks::initialize() {
+    grid.resize(n, vector<int>(m, 1));
+    initializeMaps();
     applyIntensity();
 }
 
@@ -68,10 +69,6 @@ void MetaBlocks::applyIntensity() {
     vector<vector<int>> optionList = options[elementIntensity];
     uniform_int_distribution<int> dist(0, optionList.size() - 1);
     vector<int> puzzleType = optionList[dist(gen)];
-    for (int p : puzzleType) {
-        cout << p << " ";
-    }
-    cout << endl;
     vector<int> numButtonsVec = {1, 1, 1, 2, 3};
     vector<int> numButtonsOnVec = {1, 2, 2, 5, 7};
     vector<int> numButtonsOffVec = {1, 1, 2, 5, 7};
@@ -236,6 +233,7 @@ bool checkValid12(const pair<int, int>& currPos, const vector<vector<int>>& grid
     bool secondHalf = false;
     for (int i = 0; i < b; i++) {
         int val = grid[x + i * isOne][y + i * (! isOne)];
+//        cout << x + i * isOne << " " << y + i * (! isOne) << endl;
         if (val == 0) {
             continue;
         }
@@ -433,5 +431,119 @@ void MetaBlocks::setInitializationString(string init) {
     b = input[2];
     elementIntensity = input[3];
     difficulty = input[4];
+    puzzleNum = input[5];
     initialize();
+}
+
+void MetaBlocks::saveJSONFILE(string outputDirectory, string inputString, string gridString) {
+    string outputFile = outputDirectory + '/';
+    for (char c : inputString) {
+        if (c == ',') {
+            outputFile += '_';
+        }
+        else {
+            outputFile += c;
+        }
+    }
+    outputFile += ".json";
+    ofstream file(outputFile);
+    if (!file.is_open()) {
+        cerr << "could not open file " << outputFile << endl;
+    }
+    file << gridString;
+    file.close();
+}
+
+void MetaBlocks::loadJSONFILE(const string& fileName) {
+    ifstream file(fileName);
+    if (!file.is_open()) {
+        cerr << "Could not open file " << fileName << endl;
+        return;
+    }
+    json j;
+    file >> j;
+    // Now we have the file. Let's set the grid:
+//    n = j["n"];
+//    m = j["m"];
+    b = j["b"];
+    optimalSolution = j["solutionString"];
+    vector<vector<int>> tempGrid = j["layout"].get<vector<vector<int>>>();
+    file.close();
+
+    // Update grid dimensions
+    n = tempGrid.size();
+    m = n > 0 ? tempGrid[0].size() : 0;
+    // Validate that all rows have the same number of columns
+    for (const auto& row : tempGrid) {
+        if (row.size() != m) {
+            cerr << "Error: Inconsistent row sizes in file " << fileName << endl;
+            return;
+        }
+    }
+    // Update grid dimensions
+    n = tempGrid.size();
+    m = n > 0 ? tempGrid[0].size() : 0;
+    // Validate that all rows have the same number of columns
+    for (const auto& row : tempGrid) {
+        if (row.size() != m) {
+            cerr << "Error: Inconsistent row sizes in file " << fileName << endl;
+            return;
+        }
+    }
+    // Here's the problem. Given that we know b, we need to pad the grid so we can never
+    // accidentally fall out of bounds. That will cause a lot of headache. So pad some zero rows
+    n += 2 * b;
+    m += 2 * b;
+    vector<vector<int>> newGrid(n, vector<int>(m, 0));
+    for (int i = b; i < n - b; i++) {
+        for (int j = b; j < m - b; j++) {
+            newGrid[i][j] = tempGrid[i - b][j - b];
+            if (newGrid[i][j] == 2) {
+                start = {i, j};
+                currPos = start;
+            }
+            else if (newGrid[i][j] == 3) {
+                end = {i, j};
+            }
+        }
+    }
+    grid = newGrid; // Assign the temporary grid to the class grid
+    // We have to propagate the transporters
+    // How many transporters are there?
+    int numTransporters = 0;
+    vector<pair<int, int>> transporterIndices;
+    int numButtons = 0;
+    vector<tuple<int, int, int, bool>> bridgeIndices;
+    for (int i = 0; i < n; i++) {
+        for (int j = 0; j < m; j++) {
+            if (grid[i][j] / 100 == 1) {
+                numTransporters++;
+                transporterIndices.push_back({i, j});
+            }
+            else if (grid[i][j] / 100 == 2) {
+                numButtons++;
+            }
+            else if (grid[i][j] < 0) {
+                bridgeIndices.push_back({(-grid[i][j]) % 200, i, j, (grid[i][j] < -200)});
+            }
+        }
+    }
+    buttons.resize(numButtons + 1, false);
+    buttonMap.resize(numButtons + 1);
+    for (auto [k, i, j, t] : bridgeIndices) {
+        buttonMap[k].push_back({i, j, t});
+    }
+    transporters.resize(numTransporters);
+    int val;
+    for (auto [i, j] : transporterIndices) {
+        val = grid[i][j] % 100;
+        if (val % 2) {
+            transporters[val - 1] = {i, j};
+        }
+        else {
+            transporters[val + 1] = {i, j};
+        }
+    }
+    initializeMaps();
+//    cout << "Grid loaded successfully from " << fileName << endl;
 }

@@ -15,7 +15,9 @@
 #include <cmath>
 #include <unordered_set>
 #include <random>
+#include <nlohmann/json.hpp>
 
+using json = nlohmann::json;
 using namespace std;
 
 class MetaBlocks
@@ -28,6 +30,7 @@ public:
     int b = 2;
     int elementIntensity = 2;
     int difficulty = 5;
+    int puzzleNum = 0;
     pair<int, int> start;
     pair<int, int> currPos;
     pair<int, int> end;
@@ -87,6 +90,7 @@ public:
     MetaBlocks(int in = 0, int im = 0, int ib = 0, int ielementIntensity = 0, int idifficulty = 0); // Declaration only
 
     void initialize();
+    void initializeMaps();
     void initializeGridAndGridFurniture();
     void setInitializationString(string init);
     void applyIntensity();
@@ -104,6 +108,7 @@ public:
     void move(int moveId, bool undo = false);
     void activateButton(bool deactivate = false);
     void transport();
+    bool checkValidSolution();
     pair<int, int> getNumOptimalSolutions();
     pair<int, int> showOptimalSolutions();
     vector<vector<int>> basicMCMove();
@@ -115,7 +120,9 @@ public:
     double MCStep(double energy, double temperature);
     void MCSimulation(int numSteps, double temperature);
 
-    string EvolutionAlgorithm(string init, int numGenerations, int minPopulation, int maxPopulation);
+    string EvolutionAlgorithm(string init, int minPopulation, int maxPopulation);
+    void saveJSONFILE(string outputDir, string inputString, string gridString);
+    void loadJSONFILE(const string& fileName);
     void printGrid();
 
 //    string eventTypeToString(sf::Event::EventType type);
